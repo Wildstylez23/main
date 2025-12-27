@@ -1,0 +1,202 @@
+type User @table {
+  username: String!
+  email: String!
+  createdAt: Timestamp!
+  phoneNumber: String
+  profilePictureUrl: String
+  bio: String
+  # Breeder profile fields
+  isVerifiedBreeder: Boolean
+  breederScore: Float
+  responseTimeHours: Float
+  totalSales: Int
+  doaRate: Float # Dead On Arrival percentage
+  specialties: [String]
+  fishRoomPhotoUrl: String
+}
+
+type Advertisement @table {
+  title: String!
+  description: String!
+  price: Float!
+  category: String!
+  createdAt: Timestamp!
+  imageUrls: [String]
+  location: String
+  owner: User
+  batch: FishBatch # Link to batch if from Live Stock system
+}
+
+type ChatMessage @table {
+  messageContent: String!
+  sentAt: Timestamp!
+  sender: User
+  receiver: User
+  advertisement: Advertisement
+}
+
+type Review @table {
+  rating: Int!
+  createdAt: Timestamp!
+  comment: String
+  reviewer: User
+  reviewedUser: User
+}
+
+# ============================================
+# SMART LIVE STOCK SYSTEM
+# ============================================
+
+# FishBatch - Tracks spawns/batches through lifecycle
+type FishBatch @table {
+  seller: User!
+  species: String!
+  commonName: String
+  quantity: Int!
+  availableQuantity: Int!
+  hatchDate: Date
+  estimatedReadyDate: Date
+  status: String! # 'eggs', 'fry', 'juvenile', 'ready', 'sold_out', 'cancelled'
+  createdAt: Timestamp!
+  updatedAt: Timestamp
+  # Lineage & Genetics
+  parentMaleId: String
+  parentFemaleId: String
+  lineageNotes: String
+  geneticTraits: [String] # e.g., ['albino', 'longfin', 'red_color']
+  # Water parameters for this batch
+  waterPh: Float
+  waterTemperature: Float
+  waterGh: Float
+  waterKh: Float
+  # Media
+  photoUrls: [String]
+  videoUrl: String
+  # AI Verification
+  aiVerified: Boolean
+  aiHealthScore: Float
+  aiSpeciesConfidence: Float
+  aiNotes: String
+  # Pricing
+  pricePerUnit: Float
+  minimumOrder: Int
+  # Tank assignment
+  tank: TankSetup
+}
+
+# Batch lifecycle events (water changes, treatments, observations)
+type BatchEvent @table {
+  batch: FishBatch!
+  eventType: String! # 'water_change', 'treatment', 'observation', 'feeding', 'mortality', 'status_change'
+  eventDate: Timestamp!
+  notes: String
+  waterParameters: String # JSON with pH, temp, etc at time of event
+  mortalityCount: Int
+  mediaUrl: String
+}
+
+# Reservations for future stock
+type BatchReservation @table {
+  batch: FishBatch!
+  buyer: User!
+  quantity: Int!
+  status: String! # 'waiting', 'notified', 'confirmed', 'purchased', 'cancelled'
+  createdAt: Timestamp!
+  notifiedAt: Timestamp
+  expiresAt: Timestamp
+  notes: String
+}
+
+# ============================================
+# FISH ROOM VISUALIZATION
+# ============================================
+
+# Tank/container setup in breeder's fish room
+type TankSetup @table {
+  owner: User!
+  name: String! # e.g., "Rack A - Bak 3"
+  tankType: String # 'aquarium', 'container', 'pond', 'breeding_box'
+  volumeLiters: Int
+  position: String # JSON with x, y coordinates on fish room photo
+  createdAt: Timestamp!
+  # Current conditions
+  currentPh: Float
+  currentTemperature: Float
+  currentGh: Float
+  currentKh: Float
+  currentAmmonia: Float
+  currentNitrite: Float
+  currentNitrate: Float
+  lastWaterChange: Timestamp
+  lastMeasurement: Timestamp
+  # Equipment
+  filterType: String
+  heaterWattage: Int
+  lighting: String
+  # Status
+  isActive: Boolean!
+  maintenanceNotes: String
+}
+
+# Maintenance history for tanks
+type TankMaintenance @table {
+  tank: TankSetup!
+  maintenanceType: String! # 'water_change', 'filter_clean', 'full_clean', 'equipment_check'
+  performedAt: Timestamp!
+  waterChangePercent: Int
+  notes: String
+  beforePhotoUrl: String
+  afterPhotoUrl: String
+  waterParametersBefore: String # JSON
+  waterParametersAfter: String # JSON
+}
+
+# ============================================
+# AI VERIFICATION SYSTEM
+# ============================================
+
+# AI verification requests and results
+type AiVerification @table {
+  requestedBy: User!
+  batch: FishBatch
+  tank: TankSetup
+  verificationType: String! # 'species_check', 'health_check', 'water_test_reading'
+  status: String! # 'pending', 'processing', 'completed', 'failed'
+  createdAt: Timestamp!
+  completedAt: Timestamp
+  # Input
+  mediaUrl: String!
+  mediaType: String # 'image', 'video'
+  # Results
+  speciesDetected: String
+  speciesConfidence: Float
+  healthScore: Float
+  healthIssuesDetected: [String]
+  waterReadings: String # JSON with detected values
+  aiRawResponse: String
+  # Badge earned
+  badgeAwarded: String # 'verified_species', 'healthy_stock', 'verified_parameters'
+}
+
+# ============================================
+# BREEDER REPUTATION SYSTEM
+# ============================================
+
+# Transaction outcomes for DOA tracking
+type TransactionOutcome @table {
+  seller: User!
+  buyer: User!
+  batch: FishBatch
+  advertisement: Advertisement
+  transactionDate: Timestamp!
+  quantity: Int!
+  totalAmount: Float!
+  # Outcome
+  outcome: String! # 'successful', 'doa_partial', 'doa_full', 'cancelled', 'refunded'
+  doaCount: Int
+  reportedWithin24h: Boolean
+  buyerNotes: String
+  sellerResponse: String
+  resolved: Boolean
+  resolvedAt: Timestamp
+}

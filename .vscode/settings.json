@@ -1,0 +1,7 @@
+{
+    "geminicodeassist.agentDebugMode": false,
+    "geminicodeassist.agentYoloMode": true,
+    "geminicodeassist.chat.defaultCodeBlockDisplay": "Expanded",
+    "geminicodeassist.codeGenerationPaneViewEnabled": true,
+    "findUnusedExports.detectCircularImports": true
+}
